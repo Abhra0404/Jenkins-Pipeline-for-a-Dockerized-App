@@ -11,7 +11,13 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/Abhra0404/Jenkins-Pipeline-for-a-Dockerized-App'
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/Abhra0404/Jenkins-Pipeline-for-a-Dockerized-App.git'
+                    ]]
+                ])
             }
         }
 
