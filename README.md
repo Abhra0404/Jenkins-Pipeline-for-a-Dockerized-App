@@ -1,4 +1,4 @@
-## Jenkins pipeline for a dockerized flask app
+# Jenkins pipeline for a dockerized flask app
 This project automates building and pushing a Docker image using Jenkins.
 
 ### Pipeline Stages
