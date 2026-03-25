@@ -11,13 +11,7 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: '*/main']],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/Abhra0404/Jenkins-Pipeline-for-a-Dockerized-App.git'
-                    ]]
-                ])
+                git branch: 'main', url: 'https://github.com/Abhra0404/Jenkins-Pipeline-for-a-Dockerized-App.git'
             }
         }
 
@@ -32,14 +26,20 @@ pipeline {
             }
         }
 
-        stage('Install Dependencies & Test') {
+        stage('Run Tests (Dockerized)') {
             steps {
                 sh '''
-                python3 -m ensurepip --upgrade || true
-                python3 -m pip install --upgrade pip
-                python3 -m pip install -r requirements.txt
-                python3 -m pip install pytest
-                pytest test_app.py -v || true
+                echo "🐍 Running tests inside Docker"
+
+                docker run --rm \
+                -v $(pwd):/app \
+                -w /app \
+                python:3.10 \
+                sh -c "
+                    pip install -r requirements.txt &&
+                    pip install pytest &&
+                    pytest test_app.py -v || true
+                "
                 '''
             }
         }
@@ -47,11 +47,11 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    def imageTag = "${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
-                    
+                    IMAGE_TAG = "${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
+
                     sh """
-                    echo "🐳 Building Docker Image: ${imageTag}"
-                    docker build -t ${imageTag} .
+                    echo "🐳 Building Docker Image: ${IMAGE_TAG}"
+                    docker build -t ${IMAGE_TAG} .
                     """
                 }
             }
@@ -60,28 +60,35 @@ pipeline {
         stage('Push Docker Image') {
             steps {
                 script {
-                    def imageTag = "${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
+                    IMAGE_TAG = "${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
 
-                    sh """
-                    echo "🔐 Logging into Docker Hub"
-                    echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
+                    withCredentials([usernamePassword(
+                        credentialsId: DOCKER_CREDENTIALS,
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
 
-                    echo "📤 Pushing Image"
-                    docker push ${imageTag}
-                    """
+                        sh """
+                        echo "🔐 Logging into Docker Hub"
+                        echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
+
+                        echo "📤 Pushing Image"
+                        docker push ${IMAGE_TAG}
+                        """
+                    }
                 }
             }
         }
 
-        stage('Tag as Latest (Optional but Pro Move)') {
+        stage('Tag as Latest') {
             steps {
                 script {
-                    def imageTag = "${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
-                    def latestTag = "${DOCKER_REGISTRY}/${IMAGE_NAME}:latest"
+                    IMAGE_TAG = "${DOCKER_REGISTRY}/${IMAGE_NAME}:${BUILD_NUMBER}"
+                    LATEST_TAG = "${DOCKER_REGISTRY}/${IMAGE_NAME}:latest"
 
                     sh """
-                    docker tag ${imageTag} ${latestTag}
-                    docker push ${latestTag}
+                    docker tag ${IMAGE_TAG} ${LATEST_TAG}
+                    docker push ${LATEST_TAG}
                     """
                 }
             }
