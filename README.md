@@ -1,6 +1,19 @@
 # Jenkins pipeline for a dockerized flask app
 This project automates building and pushing a Docker image using Jenkins.
 
+### Pipeline Architecture
+
+Here is how the CI/CD flow works:
+
+```mermaid
+flowchart LR
+    A[Developer] -->|Push| B(GitHub)
+    B -->|Trigger| C(Jenkins)
+    C -->|Build| D(Docker)
+    D -->|Push| E(Docker Hub)
+```
+
+
 ### Pipeline Stages
 1. **Checkout**: Pulls code from GitHub.
 2. **Test**: Runs unit tests.
