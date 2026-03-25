@@ -3,25 +3,26 @@ pipeline {
 
     environment {
         DOCKER_CREDENTIALS = 'docker-hub-credentials'
-        DOCKER_REGISTRY = 'docker.io/abhra04' // Your username
+        DOCKER_REGISTRY = 'docker.io/abhra04'
         IMAGE_NAME = 'jenkins-pipeline-app'
     }
 
     stages {
+
         stage('Checkout Code') {
             steps {
-                // Explicitly tell Jenkins to clone the repo here
-                checkout scm
-                echo "✅ Code checked out successfully!"
-                sh 'ls -la' // Verify files are there
+                git branch: 'main', url: 'https://github.com/Abhra0404/Jenkins-Pipeline-for-a-Dockerized-App'
             }
         }
 
-        stage('Test') {
+        stage('Install & Test') {
             steps {
-                sh 'pip install -r requirements.txt'
-                sh 'pip install pytest'
-                sh 'pytest test_app.py -v || true'
+                sh '''
+                python3 -m pip install --upgrade pip
+                python3 -m pip install -r requirements.txt
+                python3 -m pip install pytest
+                pytest test_app.py -v || true
+                '''
             }
         }
 
@@ -43,7 +44,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             cleanWs()
