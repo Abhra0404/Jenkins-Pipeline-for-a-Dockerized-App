@@ -22,7 +22,15 @@ flowchart LR
 
 ### How to Run
 1. Clone repo
-2. Run Jenkins via Docker (see docs)
+2. Run Jenkins via Docker 
+```
+docker run -d -p 8080:8080 -p 50000:50000 \
+  -v jenkins_home:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  --user root \
+  --name jenkins \
+  jenkins/jenkins:lts
+```
 3. Trigger build in Jenkins UI
 
 ### Screenshots

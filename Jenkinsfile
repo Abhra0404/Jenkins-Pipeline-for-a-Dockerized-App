@@ -28,19 +28,29 @@ pipeline {
 
         stage('Run Tests (Dockerized)') {
             steps {
-                sh '''
-                echo "🐍 Running tests inside Docker"
+                script {
+                    withCredentials([usernamePassword(
+                        credentialsId: DOCKER_CREDENTIALS,
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )]) {
+                        sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
 
-                docker run --rm \
-                -v $(pwd):/app \
-                -w /app \
-                python:3.10 \
-                sh -c "
-                    pip install -r requirements.txt &&
-                    pip install pytest &&
-                    pytest test_app.py -v || true
-                "
-                '''
+                        echo "🐍 Running tests inside Docker"
+
+                        docker run --rm \
+                        -v $(pwd):/app \
+                        -w /app \
+                        python:3.10 \
+                        sh -c "
+                            pip install -r requirements.txt &&
+                            pip install pytest &&
+                            pytest test_app.py -v || true
+                        "
+                        '''
+                    }
+                }
             }
         }
 
